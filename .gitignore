@@ -1,23 +1,37 @@
-# Java / Maven
+# ---- Java / Maven ----
 target/
 *.class
 *.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/timing.properties
 
-# Node / React
+# ---- Node ----
 node_modules/
 dist/
-build/
-.vite/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Env & secrets
+# ---- Environment & secrets ----
 .env
 .env.local
-application-local.properties
+.env.*.local
+!.env.example
 
-# IDE
+# ---- IDEs ----
 .idea/
-.vscode/
 *.iml
+*.iws
+.vscode/*
+!.vscode/extensions.json
+*.swp
 
-# OS
+# ---- OS ----
 .DS_Store
+Thumbs.db
+
+# ---- Logs ----
+*.log
+logs/
