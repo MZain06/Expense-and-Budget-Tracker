@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: expenses
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/expenses}
+    username: ${SPRING_DATASOURCE_USERNAME:app}
+    password: ${SPRING_DATASOURCE_PASSWORD:secret}
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway owns the schema; Hibernate only checks it matches
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
