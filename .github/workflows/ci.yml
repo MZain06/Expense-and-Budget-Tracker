@@ -59,5 +59,8 @@ jobs:
       - name: Check formatting (Prettier)
         run: npm run format:check
 
+      - name: Unit tests (Vitest)
+        run: npm test
+
       - name: Type-check and build
         run: npm run build
