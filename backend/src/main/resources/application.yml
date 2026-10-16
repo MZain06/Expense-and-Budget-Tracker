@@ -14,3 +14,10 @@ spring:
 
 server:
   port: 8080
+
+app:
+  jwt:
+    # Local development only. Real deployments must set JWT_SECRET (32+ characters).
+    secret: ${JWT_SECRET:dev-only-insecure-jwt-secret-change-me-0123456789}
+    issuer: expense-tracker
+    expiry: 1h
