@@ -10,6 +10,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /** Turns exceptions into consistent JSON error responses (RFC 9457 "problem details"). */
 @RestControllerAdvice
@@ -31,6 +32,12 @@ public class GlobalExceptionHandler {
         }
         problem.setProperty("errors", errors);
         return problem;
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ProblemDetail handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        return ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Invalid value for '" + ex.getName() + "'");
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
