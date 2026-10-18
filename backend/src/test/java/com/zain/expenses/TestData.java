@@ -1,6 +1,7 @@
 package com.zain.expenses;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.springframework.http.HttpHeaders;
@@ -27,5 +28,22 @@ public final class TestData {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body))
                 .andExpect(status().isCreated());
+    }
+
+    /** Sets a category's budget for a month, e.g. month "2026-10" and limit "200.00". */
+    public static void setBudget(
+            MockMvc mockMvc, String bearerToken, String month, long categoryId, String limit)
+            throws Exception {
+        String body =
+                """
+                {"limit": %s}
+                """
+                        .formatted(limit);
+        mockMvc.perform(
+                        put("/api/budgets/{month}/{categoryId}", month, categoryId)
+                                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body))
+                .andExpect(status().isOk());
     }
 }
