@@ -39,4 +39,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("categoryId") Long categoryId,
             @Param("firstDay") LocalDate firstDay,
             @Param("lastDay") LocalDate lastDay);
+
+    /** Totals a user's spending per category, in one grouped query. */
+    @Query(
+            """
+            select new com.zain.expenses.transaction.CategorySpending(c.id, c.name, sum(t.amount))
+            from Transaction t join t.category c
+            where t.user.id = :userId
+              and t.occurredOn between :firstDay and :lastDay
+            group by c.id, c.name
+            """)
+    List<CategorySpending> spendingByCategory(
+            @Param("userId") Long userId,
+            @Param("firstDay") LocalDate firstDay,
+            @Param("lastDay") LocalDate lastDay);
 }
