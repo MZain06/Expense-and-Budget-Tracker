@@ -1,6 +1,4 @@
 import { z } from "zod";
 
-// nginx sends a Content-Security-Policy that blocks eval(). Zod tests whether eval() works before
-// using it to speed up validation, and the browser reports that test as a CSP violation, so turn
-// it off. This must run before any schema is created, which is why main.tsx imports it first.
+// Stop Zod testing eval(): the nginx Content-Security-Policy reports the test as a violation.
 z.config({ jitless: true });

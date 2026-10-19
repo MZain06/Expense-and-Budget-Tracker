@@ -1,11 +1,3 @@
-# The whole app with one command:
-#   docker compose up --build     (then open http://localhost:3000)
-# For development, start just the database and run the backend and frontend yourself:
-#   docker compose up -d db
-# Either way, you need a .env file next to this one: copy .env.example and fill it in.
-
-# Lock-down settings for the backend and frontend containers: a read-only filesystem
-# (apart from /tmp), no Linux capabilities, and no way to gain more privileges.
 x-hardened: &hardened
   read_only: true
   tmpfs:
@@ -24,7 +16,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports:
-      - "127.0.0.1:5432:5432" # reachable from this computer only, not the rest of the network
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

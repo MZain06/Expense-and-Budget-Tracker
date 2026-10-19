@@ -1,13 +1,10 @@
-# Dependabot opens a pull request whenever something this project uses has a new version.
-# CI runs on each one, so an update that breaks the build gets caught before you merge it.
 version: 2
 updates:
   - package-ecosystem: maven
     directory: /backend
     schedule:
       interval: weekly
-    # Wait a week before suggesting a new release, so a bad or hijacked one has time to be
-    # spotted and pulled. Security fixes skip the wait.
+    # Skip releases less than a week old. Security updates aren't delayed.
     cooldown:
       default-days: 7
     groups:
@@ -26,6 +23,10 @@ updates:
     groups:
       npm:
         update-types: [minor, patch]
+    ignore:
+      # Keep the types on Node 24, the version CI and the Docker build use.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: chore
       include: scope
@@ -39,7 +40,7 @@ updates:
     cooldown:
       default-days: 7
     ignore:
-      # Stay on Java 21 and Node 24, the versions CI tests with. Move those on purpose.
+      # Move to a new Java or Node major version by hand, together with CI.
       - dependency-name: eclipse-temurin
         update-types: ["version-update:semver-major"]
       - dependency-name: node

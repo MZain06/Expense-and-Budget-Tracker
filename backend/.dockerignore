@@ -1,4 +1,3 @@
-# Only send Docker what the Dockerfile copies: .mvn, mvnw, pom.xml and src.
 target/
 .idea/
 .vscode/
