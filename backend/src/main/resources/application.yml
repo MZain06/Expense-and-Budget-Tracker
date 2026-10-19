@@ -15,6 +15,12 @@ spring:
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health  # for Docker's health check; every other Actuator endpoint stays hidden
+
 app:
   jwt:
     # Local development only. Real deployments must set JWT_SECRET (32+ characters).
