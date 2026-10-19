@@ -30,6 +30,11 @@ export function formatMonth(month: string): string {
   );
 }
 
+/** "2026-09" becomes "September". */
+export function formatMonthName(month: string): string {
+  return new Intl.DateTimeFormat("en-GB", { month: "long" }).format(parseIsoDate(`${month}-01`));
+}
+
 /** "2026-10-15" becomes "Thu". */
 export function formatWeekday(isoDate: string): string {
   return new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(parseIsoDate(isoDate));
