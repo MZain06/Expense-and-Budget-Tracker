@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatCompactMoney, formatMoney, sumAmounts } from "./money";
+
 describe("money", () => {
   it("formats amounts as pounds and pence", () => {
     expect(formatMoney(1234.5)).toBe("£1,234.50");
