@@ -4,6 +4,7 @@ import { Layout } from "./components/Layout";
 import { BudgetsPage } from "./pages/BudgetsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { LoginPage } from "./pages/LoginPage";
+import { OverviewPage } from "./pages/OverviewPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { TransactionsPage } from "./pages/TransactionsPage";
 
@@ -18,7 +19,7 @@ export const router = createBrowserRouter([
         element: <Layout />,
         children: [
           // Until there's an overview page, start on the transactions.
-          { index: true, element: <Navigate to="/transactions" replace /> },
+          { index: true, element: <OverviewPage /> },
           { path: "transactions", element: <TransactionsPage /> },
           { path: "budgets", element: <BudgetsPage /> },
           { path: "categories", element: <CategoriesPage /> },
