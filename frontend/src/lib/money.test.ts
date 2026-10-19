@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, sumAmounts } from "./money";
-
+import { formatCompactMoney, formatMoney, sumAmounts } from "./money";
 describe("money", () => {
   it("formats amounts as pounds and pence", () => {
     expect(formatMoney(1234.5)).toBe("£1,234.50");
     expect(formatMoney(0)).toBe("£0.00");
+  });
+
+  it("shortens amounts for chart axes", () => {
+    expect(formatCompactMoney(0)).toBe("£0");
+    expect(formatCompactMoney(800)).toBe("£800");
+    // Newer Unicode locale data writes "£1.5k" for British English and older data "£1.5K", so
+    // the test accepts either.
+    expect(formatCompactMoney(1500)).toMatch(/^£1\.5k$/i);
   });
 
   it("adds amounts without floating-point errors", () => {

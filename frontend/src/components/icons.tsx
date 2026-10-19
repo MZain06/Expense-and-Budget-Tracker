@@ -41,3 +41,28 @@ export function TrashIcon({ className = "size-4" }: IconProps) {
     </svg>
   );
 }
+
+export function ArrowUpIcon({ className = "size-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
+      <path d="M10 16V4m-5 5 5-5 5 5" {...stroke} />
+    </svg>
+  );
+}
+
+export function ArrowDownIcon({ className = "size-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
+      <path d="M10 4v12m-5-5 5 5 5-5" {...stroke} />
+    </svg>
+  );
+}
+
+export function AlertIcon({ className = "size-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
+      <circle cx="10" cy="10" r="7.25" {...stroke} />
+      <path d="M10 6.5v4M10 13.5h.01" {...stroke} />
+    </svg>
+  );
+}

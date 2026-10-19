@@ -37,3 +37,40 @@ export type Budget = {
   categoryName: string;
   limit: number;
 };
+
+export type CategorySummary = {
+  categoryId: number;
+  categoryName: string;
+  spent: number;
+  budget: number | null;
+  remaining: number | null;
+};
+
+export type MonthlySummary = {
+  totalSpent: number;
+  totalBudget: number;
+  categories: CategorySummary[];
+};
+
+export type MonthTotal = {
+  month: string;
+  spent: number;
+};
+
+export type CategoryChange = {
+  categoryId: number;
+  categoryName: string;
+  thisMonth: number;
+  lastMonth: number;
+  change: number;
+};
+
+export type Insights = {
+  spent: number;
+  spentLastMonth: number;
+  averagePerDay: number;
+  projectedTotal: number | null;
+  threeMonthAverage: number;
+  trend: MonthTotal[];
+  biggestChanges: CategoryChange[];
+};

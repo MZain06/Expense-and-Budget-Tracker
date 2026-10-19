@@ -12,6 +12,14 @@
   --color-brand-strong: #17573f;
   --color-brand-soft: #e4f1ea;
   --color-danger: #b42318;
+  --color-warning: #8a5a00;
+  --color-warning-fill: #d9901c;
+  --color-warning-soft: #faedd6;
+
+  /* Chart gridlines, the baseline, and the grey for months in the background */
+  --color-grid: #e6ebe8;
+  --color-axis: #c3cdc8;
+  --color-chart-muted: #93a59c;
 }
 
 @layer base {

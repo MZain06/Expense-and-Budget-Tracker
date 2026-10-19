@@ -6,6 +6,7 @@ import { BrandMark } from "./BrandMark";
 import { Button } from "./Button";
 
 const sections = [
+  { to: "/", label: "Overview" },
   { to: "/transactions", label: "Transactions" },
   { to: "/budgets", label: "Budgets" },
   { to: "/categories", label: "Categories" },
