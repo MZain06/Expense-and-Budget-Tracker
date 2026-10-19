@@ -16,5 +16,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     clearMocks: true,
+    coverage: {
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/test/**", "src/main.tsx", "src/lib/zodConfig.ts"],
+      reporter: ["text", "html", "json-summary"],
+    },
   },
 });
