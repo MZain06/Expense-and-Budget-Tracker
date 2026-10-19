@@ -53,4 +53,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("userId") Long userId,
             @Param("firstDay") LocalDate firstDay,
             @Param("lastDay") LocalDate lastDay);
+
+    /** Totals a user's spending per day. Days with nothing spent don't appear. */
+    @Query(
+            """
+            select new com.zain.expenses.transaction.DailySpending(t.occurredOn, sum(t.amount))
+            from Transaction t
+            where t.user.id = :userId
+              and t.occurredOn between :firstDay and :lastDay
+            group by t.occurredOn
+            """)
+    List<DailySpending> spendingByDay(
+            @Param("userId") Long userId,
+            @Param("firstDay") LocalDate firstDay,
+            @Param("lastDay") LocalDate lastDay);
 }
