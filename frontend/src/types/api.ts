@@ -31,3 +31,9 @@ export type TransactionInput = {
   occurredOn: string;
   note: string | null;
 };
+
+export type Budget = {
+  categoryId: number;
+  categoryName: string;
+  limit: number;
+};
