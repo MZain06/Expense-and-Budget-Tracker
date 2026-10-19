@@ -11,7 +11,8 @@ describe("money", () => {
     expect(formatCompactMoney(800)).toBe("£800");
     // Newer Unicode locale data writes "£1.5k" for British English and older data "£1.5K", so
     // the test accepts either.
-    expect(formatCompactMoney(1500)).toMatch(/^£1\.5k$/i);  });
+    expect(formatCompactMoney(1500)).toMatch(/^£1\.5k$/i);
+  });
 
   it("adds amounts without floating-point errors", () => {
     expect(0.1 + 0.2).not.toBe(0.3);
