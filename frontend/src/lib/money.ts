@@ -13,8 +13,7 @@ const compactPounds = new Intl.NumberFormat("en-GB", {
   maximumFractionDigits: 1,
 });
 
-/** For chart axes: 1500 becomes "£1.5K". */
-export function formatCompactMoney(amount: number): string {
+/** For chart axes: 1500 becomes "£1.5k" (or "£1.5K" with older locale data). */export function formatCompactMoney(amount: number): string {
   return compactPounds.format(amount);
 }
 

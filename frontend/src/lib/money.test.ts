@@ -9,8 +9,9 @@ describe("money", () => {
   it("shortens amounts for chart axes", () => {
     expect(formatCompactMoney(0)).toBe("£0");
     expect(formatCompactMoney(800)).toBe("£800");
-    expect(formatCompactMoney(1500)).toBe("£1.5K");
-  });
+    // Newer Unicode locale data writes "£1.5k" for British English and older data "£1.5K", so
+    // the test accepts either.
+    expect(formatCompactMoney(1500)).toMatch(/^£1\.5k$/i);  });
 
   it("adds amounts without floating-point errors", () => {
     expect(0.1 + 0.2).not.toBe(0.3);
