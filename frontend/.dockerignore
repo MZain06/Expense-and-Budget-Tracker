@@ -1,0 +1,5 @@
+# node_modules must stay out: it holds Windows builds of some packages, and npm ci installs fresh ones.
+node_modules/
+dist/
+coverage/
+*.local
