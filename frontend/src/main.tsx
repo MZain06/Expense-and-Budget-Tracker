@@ -1,3 +1,5 @@
+// Must be the first import: see the comment inside.
+import "./lib/zodConfig";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/public-sans";

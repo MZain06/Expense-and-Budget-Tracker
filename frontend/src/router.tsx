@@ -18,7 +18,6 @@ export const router = createBrowserRouter([
         path: "/",
         element: <Layout />,
         children: [
-          // Until there's an overview page, start on the transactions.
           { index: true, element: <OverviewPage /> },
           { path: "transactions", element: <TransactionsPage /> },
           { path: "budgets", element: <BudgetsPage /> },
