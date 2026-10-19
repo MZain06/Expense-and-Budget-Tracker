@@ -102,10 +102,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Compose takes this from the environment, as CI has no .env file. It only signs
-      # tokens for the throwaway stack below, so it doesn't need to be a real secret.
+      # Only signs tokens for the throwaway stack below, so it doesn't need to be a real secret.
       JWT_SECRET: ci-only-secret-for-the-throwaway-smoke-test-stack
-      # Don't attach a build record to every run; the job summary already describes the builds.
       DOCKER_BUILD_RECORD_UPLOAD: false
     steps:
       - uses: actions/checkout@v7
@@ -114,8 +112,6 @@ jobs:
 
       - uses: docker/setup-buildx-action@v4
 
-      # Layers are cached between runs, so an unchanged pom.xml or package-lock.json
-      # means the dependencies aren't downloaded again.
       - name: Build the backend image
         uses: docker/build-push-action@v7
         with:
@@ -145,7 +141,6 @@ jobs:
             curl -fsS "$base$path" -o page.html
             grep -q '<div id="root">' page.html
           done
-          # Register, log in, then call an endpoint that needs the token
           credentials='{"email":"smoke@example.com","password":"smoke-test-password"}'
           curl -fsS -X POST "$base/api/auth/register" -H 'Content-Type: application/json' -d "$credentials" -o /dev/null
           token=$(curl -fsS -X POST "$base/api/auth/login" -H 'Content-Type: application/json' -d "$credentials" | jq -r .accessToken)
