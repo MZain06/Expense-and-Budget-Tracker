@@ -65,7 +65,7 @@ class SummaryControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalSpent").value(0.0))
                 .andExpect(jsonPath("$.totalBudget").value(0.0))
-                .andExpect(jsonPath("$.categories.length()").value(3 - 3));
+                .andExpect(jsonPath("$.categories.length()").value(0));
     }
 
     @Test
