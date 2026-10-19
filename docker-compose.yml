@@ -41,6 +41,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-app}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env - see .env.example}
+      SPRING_PROFILES_ACTIVE: demo
     depends_on:
       db:
         condition: service_healthy
