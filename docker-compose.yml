@@ -1,19 +1,59 @@
+# The whole app with one command:
+#   docker compose up --build     (then open http://localhost:3000)
+# For development, start just the database and run the backend and frontend yourself:
+#   docker compose up -d db
+# Either way, you need a .env file next to this one: copy .env.example and fill it in.
+
+# Lock-down settings for the backend and frontend containers: a read-only filesystem
+# (apart from /tmp), no Linux capabilities, and no way to gain more privileges.
+x-hardened: &hardened
+  read_only: true
+  tmpfs:
+    - /tmp
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+
 services:
   db:
     image: postgres:16
     container_name: expenses-db
     environment:
-      POSTGRES_DB: expenses
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${POSTGRES_DB:-expenses}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432" # reachable from this computer only, not the rest of the network
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d expenses"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       retries: 5
+
+  backend:
+    <<: *hardened
+    image: expenses-backend
+    build: ./backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-expenses}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-app}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env - see .env.example}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    <<: *hardened
+    image: expenses-frontend
+    build: ./frontend
+    ports:
+      - "127.0.0.1:3000:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:
