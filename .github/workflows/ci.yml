@@ -17,11 +17,14 @@ jobs:
   backend:
     name: Backend (Java 21, Maven)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: backend
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@v5
         with:
@@ -32,17 +35,34 @@ jobs:
       - name: Check formatting (Spotless)
         run: ./mvnw -B spotless:check
 
-      - name: Build, run tests (Testcontainers), Checkstyle
+      - name: Build, run tests (Testcontainers), Checkstyle, coverage
         run: ./mvnw -B verify
+
+      - name: Coverage summary
+        run: |
+          # One row per class; columns 8 and 9 are its missed and covered lines.
+          awk -F, 'NR > 1 { missed += $8; covered += $9 }
+            END { printf "### Backend coverage\nLines: %.1f%% (%d of %d)\n", 100 * covered / (covered + missed), covered, covered + missed }' \
+            target/site/jacoco/jacoco.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-coverage
+          path: backend/target/site/jacoco/
+          retention-days: 14
 
   frontend:
     name: Frontend (Node 24, Vite)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@v5
         with:
@@ -59,8 +79,83 @@ jobs:
       - name: Check formatting (Prettier)
         run: npm run format:check
 
-      - name: Unit tests (Vitest)
-        run: npm test
+      - name: Unit tests (Vitest) with coverage
+        run: npm run test:coverage
+
+      - name: Coverage summary
+        run: >-
+          jq -r '"### Frontend coverage\nLines: \(.total.lines.pct)% (\(.total.lines.covered) of \(.total.lines.total))"'
+          coverage/coverage-summary.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 14
 
       - name: Type-check and build
         run: npm run build
+
+  docker:
+    name: Docker images and smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Compose takes this from the environment, as CI has no .env file. It only signs
+      # tokens for the throwaway stack below, so it doesn't need to be a real secret.
+      JWT_SECRET: ci-only-secret-for-the-throwaway-smoke-test-stack
+      # Don't attach a build record to every run; the job summary already describes the builds.
+      DOCKER_BUILD_RECORD_UPLOAD: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Layers are cached between runs, so an unchanged pom.xml or package-lock.json
+      # means the dependencies aren't downloaded again.
+      - name: Build the backend image
+        uses: docker/build-push-action@v7
+        with:
+          context: backend
+          tags: expenses-backend
+          load: true
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,scope=backend,mode=max
+
+      - name: Build the frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: frontend
+          tags: expenses-frontend
+          load: true
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+      - name: Start the whole stack
+        run: docker compose up --no-build --wait --wait-timeout 180
+
+      - name: Smoke test through nginx
+        run: |
+          base=http://127.0.0.1:3000
+          # The home page, and a deep link that only works if nginx falls back to index.html
+          for path in / /budgets; do
+            curl -fsS "$base$path" -o page.html
+            grep -q '<div id="root">' page.html
+          done
+          # Register, log in, then call an endpoint that needs the token
+          credentials='{"email":"smoke@example.com","password":"smoke-test-password"}'
+          curl -fsS -X POST "$base/api/auth/register" -H 'Content-Type: application/json' -d "$credentials" -o /dev/null
+          token=$(curl -fsS -X POST "$base/api/auth/login" -H 'Content-Type: application/json' -d "$credentials" | jq -r .accessToken)
+          curl -fsS "$base/api/insights" -H "Authorization: Bearer $token" | jq -e '.trend | length == 12' > /dev/null
+          echo "The whole stack is up and answering through nginx."
+
+      - name: Show the logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose down --volumes
