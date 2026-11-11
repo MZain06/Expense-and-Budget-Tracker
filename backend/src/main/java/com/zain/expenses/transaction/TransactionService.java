@@ -55,6 +55,7 @@ public class TransactionService {
                 new Transaction(
                         users.getReferenceById(userId),
                         category,
+                        directionOf(request),
                         request.amount(),
                         request.occurredOn(),
                         clean(request.note()));
@@ -65,7 +66,12 @@ public class TransactionService {
     public TransactionResponse update(Long userId, Long id, TransactionRequest request) {
         Transaction transaction = findOwnedTransaction(userId, id);
         Category category = findOwnedCategory(userId, request.categoryId());
-        transaction.update(category, request.amount(), request.occurredOn(), clean(request.note()));
+        transaction.update(
+                category,
+                directionOf(request),
+                request.amount(),
+                request.occurredOn(),
+                clean(request.note()));
         return TransactionResponse.from(transaction);
     }
 
@@ -84,6 +90,10 @@ public class TransactionService {
         return categories
                 .findByIdAndUserId(categoryId, userId)
                 .orElseThrow(UnknownCategoryException::new);
+    }
+
+    private static Direction directionOf(TransactionRequest request) {
+        return request.direction() != null ? request.direction() : Direction.OUT;
     }
 
     private static String clean(String note) {

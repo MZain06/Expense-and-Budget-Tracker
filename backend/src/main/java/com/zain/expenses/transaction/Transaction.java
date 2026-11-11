@@ -4,6 +4,8 @@ import com.zain.expenses.category.Category;
 import com.zain.expenses.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,6 +34,10 @@ public class Transaction {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Direction direction;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
@@ -53,8 +59,19 @@ public class Transaction {
 
     public Transaction(
             User user, Category category, BigDecimal amount, LocalDate occurredOn, String note) {
+        this(user, category, Direction.OUT, amount, occurredOn, note);
+    }
+
+    public Transaction(
+            User user,
+            Category category,
+            Direction direction,
+            BigDecimal amount,
+            LocalDate occurredOn,
+            String note) {
         this.user = user;
         this.category = category;
+        this.direction = direction;
         this.amount = amount;
         this.occurredOn = occurredOn;
         this.note = note;
@@ -65,8 +82,14 @@ public class Transaction {
         this.createdAt = Instant.now();
     }
 
-    public void update(Category category, BigDecimal amount, LocalDate occurredOn, String note) {
+    public void update(
+            Category category,
+            Direction direction,
+            BigDecimal amount,
+            LocalDate occurredOn,
+            String note) {
         this.category = category;
+        this.direction = direction;
         this.amount = amount;
         this.occurredOn = occurredOn;
         this.note = note;
@@ -82,6 +105,10 @@ public class Transaction {
 
     public Category getCategory() {
         return category;
+    }
+
+    public Direction getDirection() {
+        return direction;
     }
 
     public BigDecimal getAmount() {

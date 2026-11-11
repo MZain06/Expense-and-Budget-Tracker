@@ -7,9 +7,10 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** The body for creating or updating a transaction. */
+/** The body for creating or updating a transaction. Without a direction, it's money out. */
 public record TransactionRequest(
         @NotNull @Positive @Digits(integer = 10, fraction = 2) BigDecimal amount,
         @NotNull Long categoryId,
         @NotNull LocalDate occurredOn,
-        @Size(max = 280) String note) {}
+        @Size(max = 280) String note,
+        Direction direction) {}

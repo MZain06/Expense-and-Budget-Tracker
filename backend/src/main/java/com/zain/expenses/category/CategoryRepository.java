@@ -3,6 +3,7 @@ package com.zain.expenses.category;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,4 +19,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     @Query("select count(t) from Transaction t where t.category.id = :categoryId")
     long countTransactions(@Param("categoryId") Long categoryId);
+
+    @Modifying
+    @Query("delete from Budget b where b.category = :category")
+    void deleteBudgets(@Param("category") Category category);
 }
