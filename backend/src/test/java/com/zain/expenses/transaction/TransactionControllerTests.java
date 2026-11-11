@@ -49,9 +49,44 @@ class TransactionControllerTests {
         mockMvc.perform(get("/api/transactions/{id}", id).header(AUTHORIZATION, zain))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(12.5))
+                .andExpect(jsonPath("$.direction").value("OUT"))
                 .andExpect(jsonPath("$.occurredOn").value("2026-10-03"))
                 .andExpect(jsonPath("$.note").value("Lunch"))
                 .andExpect(jsonPath("$.categoryName").value("Food"));
+    }
+
+    @Test
+    void recordsMoneyIn() throws Exception {
+        long salary = categoryId(mockMvc, zain, "Salary");
+
+        mockMvc.perform(
+                        post("/api/transactions")
+                                .header(AUTHORIZATION, zain)
+                                .contentType(APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"categoryId": %d, "amount": 1350.00,
+                                         "occurredOn": "2026-10-01", "direction": "IN"}
+                                        """
+                                                .formatted(salary)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.direction").value("IN"))
+                .andExpect(jsonPath("$.categoryName").value("Salary"));
+    }
+
+    @Test
+    void rejectsAnUnknownDirection() throws Exception {
+        mockMvc.perform(
+                        post("/api/transactions")
+                                .header(AUTHORIZATION, zain)
+                                .contentType(APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {"categoryId": %d, "amount": 5.00,
+                                         "occurredOn": "2026-10-01", "direction": "SIDEWAYS"}
+                                        """
+                                                .formatted(food)))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

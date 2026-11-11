@@ -7,9 +7,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.zain.expenses.TestcontainersConfiguration;
 import com.zain.expenses.category.Category;
+import com.zain.expenses.category.CategoryKind;
 import com.zain.expenses.category.CategoryRepository;
 import com.zain.expenses.user.User;
 import com.zain.expenses.user.UserRepository;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +42,8 @@ class RegistrationTests {
 
         User saved = users.findByEmail("zain@example.com").orElseThrow();
         assertThat(saved.getPasswordHash()).startsWith("$2").isNotEqualTo("correct-horse-battery");
-        assertThat(categories.findByUserIdOrderByNameAsc(saved.getId()))
+        List<Category> defaults = categories.findByUserIdOrderByNameAsc(saved.getId());
+        assertThat(defaults)
                 .extracting(Category::getName)
                 .containsExactly(
                         "Bills",
@@ -48,8 +51,14 @@ class RegistrationTests {
                         "Food",
                         "Health",
                         "Other",
+                        "Other income",
+                        "Salary",
                         "Shopping",
                         "Transport");
+        assertThat(defaults)
+                .filteredOn(category -> category.getKind() == CategoryKind.INCOME)
+                .extracting(Category::getName)
+                .containsExactly("Other income", "Salary");
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.zain.expenses.insights;
 
 import static com.zain.expenses.TestAuth.bearerTokenFor;
 import static com.zain.expenses.TestAuth.categoryId;
+import static com.zain.expenses.TestData.addMoneyIn;
 import static com.zain.expenses.TestData.addTransaction;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -49,6 +50,20 @@ class InsightsControllerTests {
                 .andExpect(jsonPath("$.biggestChanges[0].categoryName").value("Transport"))
                 .andExpect(jsonPath("$.biggestChanges[0].change").value(60.0))
                 .andExpect(jsonPath("$.biggestChanges[1].categoryName").value("Food"));
+    }
+
+    @Test
+    void leavesIncomeOutOfSpendingAndTakesRefundsOff() throws Exception {
+        String zain = bearerTokenFor(mockMvc, "zain@example.com");
+        long shopping = categoryId(mockMvc, zain, "Shopping");
+        addTransaction(mockMvc, zain, shopping, "50.00", "2026-09-03");
+        addMoneyIn(mockMvc, zain, shopping, "20.00", "2026-09-10");
+        addMoneyIn(mockMvc, zain, categoryId(mockMvc, zain, "Salary"), "1350.00", "2026-09-01");
+
+        mockMvc.perform(get("/api/insights").param("month", "2026-09").header(AUTHORIZATION, zain))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.spent").value(30.0))
+                .andExpect(jsonPath("$.trend[11].spent").value(30.0));
     }
 
     @Test

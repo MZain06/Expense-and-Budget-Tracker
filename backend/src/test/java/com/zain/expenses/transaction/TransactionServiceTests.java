@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.zain.expenses.category.Category;
+import com.zain.expenses.category.CategoryKind;
 import com.zain.expenses.category.CategoryRepository;
 import com.zain.expenses.user.User;
 import com.zain.expenses.user.UserRepository;
@@ -71,10 +72,35 @@ class TransactionServiceTests {
                 service.create(
                         USER_ID,
                         new TransactionRequest(
-                                new BigDecimal("12.50"), 3L, LocalDate.of(2026, 10, 3), "   "));
+                                new BigDecimal("12.50"),
+                                3L,
+                                LocalDate.of(2026, 10, 3),
+                                "   ",
+                                null));
 
         assertThat(created.note()).isNull();
         assertThat(created.categoryName()).isEqualTo("Food");
+    }
+
+    @Test
+    void createKeepsTheDirectionItIsGiven() {
+        User user = new User("zain@example.com", "hash");
+        Category salary = new Category(user, "Salary", CategoryKind.INCOME);
+        when(categories.findByIdAndUserId(8L, USER_ID)).thenReturn(Optional.of(salary));
+        when(users.getReferenceById(USER_ID)).thenReturn(user);
+        when(transactions.save(any(Transaction.class))).thenAnswer(call -> call.getArgument(0));
+
+        TransactionResponse created =
+                service.create(
+                        USER_ID,
+                        new TransactionRequest(
+                                new BigDecimal("1350.00"),
+                                8L,
+                                LocalDate.of(2026, 10, 1),
+                                "October pay",
+                                Direction.IN));
+
+        assertThat(created.direction()).isEqualTo(Direction.IN);
     }
 
     @Test
@@ -82,7 +108,7 @@ class TransactionServiceTests {
         when(categories.findByIdAndUserId(99L, USER_ID)).thenReturn(Optional.empty());
         TransactionRequest request =
                 new TransactionRequest(
-                        new BigDecimal("5.00"), 99L, LocalDate.of(2026, 10, 3), null);
+                        new BigDecimal("5.00"), 99L, LocalDate.of(2026, 10, 3), null, null);
 
         assertThatThrownBy(() -> service.create(USER_ID, request))
                 .isInstanceOf(UnknownCategoryException.class);

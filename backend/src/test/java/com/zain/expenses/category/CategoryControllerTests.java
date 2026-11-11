@@ -3,6 +3,7 @@ package com.zain.expenses.category;
 import static com.zain.expenses.TestAuth.bearerTokenFor;
 import static com.zain.expenses.TestAuth.categoryId;
 import static com.zain.expenses.TestData.addTransaction;
+import static com.zain.expenses.TestData.setBudget;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -36,10 +37,13 @@ class CategoryControllerTests {
 
         mockMvc.perform(get("/api/categories").header(AUTHORIZATION, token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(7))
+                .andExpect(jsonPath("$.length()").value(9))
                 .andExpect(jsonPath("$[0].id").isNumber())
                 .andExpect(jsonPath("$[0].name").value("Bills"))
-                .andExpect(jsonPath("$[6].name").value("Transport"));
+                .andExpect(jsonPath("$[0].kind").value("SPENDING"))
+                .andExpect(jsonPath("$[6].name").value("Salary"))
+                .andExpect(jsonPath("$[6].kind").value("INCOME"))
+                .andExpect(jsonPath("$[8].name").value("Transport"));
     }
 
     @Test
@@ -50,7 +54,7 @@ class CategoryControllerTests {
         assertThat(categoryId(mockMvc, zain, "Food"))
                 .isNotEqualTo(categoryId(mockMvc, alex, "Food"));
         mockMvc.perform(get("/api/categories").header(AUTHORIZATION, alex))
-                .andExpect(jsonPath("$.length()").value(7));
+                .andExpect(jsonPath("$.length()").value(9));
     }
 
     @Test
@@ -69,9 +73,24 @@ class CategoryControllerTests {
                                 .content(nameJson("  Eating   out ")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
-                .andExpect(jsonPath("$.name").value("Eating out"));
+                .andExpect(jsonPath("$.name").value("Eating out"))
+                .andExpect(jsonPath("$.kind").value("SPENDING"));
         mockMvc.perform(get("/api/categories").header(AUTHORIZATION, zain))
-                .andExpect(jsonPath("$.length()").value(8));
+                .andExpect(jsonPath("$.length()").value(10));
+    }
+
+    @Test
+    void createsAnIncomeCategory() throws Exception {
+        String zain = bearerTokenFor(mockMvc, "zain@example.com");
+
+        mockMvc.perform(
+                        post("/api/categories")
+                                .header(AUTHORIZATION, zain)
+                                .contentType(APPLICATION_JSON)
+                                .content(categoryJson("Freelance", "INCOME")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Freelance"))
+                .andExpect(jsonPath("$.kind").value("INCOME"));
     }
 
     @Test
@@ -115,6 +134,38 @@ class CategoryControllerTests {
     }
 
     @Test
+    void renamingWithoutAKindKeepsTheKind() throws Exception {
+        String zain = bearerTokenFor(mockMvc, "zain@example.com");
+        long salary = categoryId(mockMvc, zain, "Salary");
+
+        mockMvc.perform(
+                        put("/api/categories/{id}", salary)
+                                .header(AUTHORIZATION, zain)
+                                .contentType(APPLICATION_JSON)
+                                .content(nameJson("Pay")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Pay"))
+                .andExpect(jsonPath("$.kind").value("INCOME"));
+    }
+
+    @Test
+    void turningACategoryIntoIncomeRemovesItsBudgets() throws Exception {
+        String zain = bearerTokenFor(mockMvc, "zain@example.com");
+        long food = categoryId(mockMvc, zain, "Food");
+        setBudget(mockMvc, zain, "2026-10", food, "200.00");
+
+        mockMvc.perform(
+                        put("/api/categories/{id}", food)
+                                .header(AUTHORIZATION, zain)
+                                .contentType(APPLICATION_JSON)
+                                .content(categoryJson("Food", "INCOME")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kind").value("INCOME"));
+        mockMvc.perform(get("/api/budgets").param("month", "2026-10").header(AUTHORIZATION, zain))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void canChangeTheCaseOfItsOwnName() throws Exception {
         String zain = bearerTokenFor(mockMvc, "zain@example.com");
         long food = categoryId(mockMvc, zain, "Food");
@@ -149,7 +200,7 @@ class CategoryControllerTests {
         mockMvc.perform(delete("/api/categories/{id}", food).header(AUTHORIZATION, zain))
                 .andExpect(status().isNoContent());
         mockMvc.perform(get("/api/categories").header(AUTHORIZATION, zain))
-                .andExpect(jsonPath("$.length()").value(6));
+                .andExpect(jsonPath("$.length()").value(8));
     }
 
     @Test
@@ -186,5 +237,12 @@ class CategoryControllerTests {
         {"name": "%s"}
         """
                 .formatted(name);
+    }
+
+    private static String categoryJson(String name, String kind) {
+        return """
+        {"name": "%s", "kind": "%s"}
+        """
+                .formatted(name, kind);
     }
 }

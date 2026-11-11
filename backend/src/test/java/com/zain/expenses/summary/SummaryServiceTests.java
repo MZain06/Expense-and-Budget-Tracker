@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.zain.expenses.budget.Budget;
 import com.zain.expenses.budget.BudgetRepository;
 import com.zain.expenses.category.Category;
+import com.zain.expenses.transaction.CategoryIncome;
 import com.zain.expenses.transaction.CategorySpending;
 import com.zain.expenses.transaction.TransactionRepository;
 import com.zain.expenses.user.User;
@@ -94,7 +95,26 @@ class SummaryServiceTests {
 
         assertThat(summary.totalSpent()).isEqualByComparingTo("0.00");
         assertThat(summary.totalBudget()).isEqualByComparingTo("0.00");
+        assertThat(summary.totalIncome()).isEqualByComparingTo("0.00");
         assertThat(summary.categories()).isEmpty();
+        assertThat(summary.income()).isEmpty();
+    }
+
+    @Test
+    void addsUpMoneyInByIncomeCategory() {
+        when(transactions.incomeByCategory(USER_ID, OCTOBER.atDay(1), OCTOBER.atEndOfMonth()))
+                .thenReturn(
+                        List.of(
+                                new CategoryIncome(9L, "Other income", new BigDecimal("20.00")),
+                                new CategoryIncome(8L, "Salary", new BigDecimal("1350.00")),
+                                new CategoryIncome(10L, "Gifts", new BigDecimal("0.00"))));
+
+        MonthlySummary summary = service.summarise(USER_ID, OCTOBER);
+
+        assertThat(summary.totalIncome()).isEqualByComparingTo("1370.00");
+        assertThat(summary.income())
+                .extracting(CategoryIncome::categoryName)
+                .containsExactly("Salary", "Other income");
     }
 
     @Test
