@@ -4,6 +4,7 @@ import static java.util.Comparator.comparing;
 
 import com.zain.expenses.budget.Budget;
 import com.zain.expenses.budget.BudgetRepository;
+import com.zain.expenses.transaction.CategoryIncome;
 import com.zain.expenses.transaction.CategorySpending;
 import com.zain.expenses.transaction.TransactionRepository;
 import java.math.BigDecimal;
@@ -66,7 +67,21 @@ public class SummaryService {
                                         .reversed()
                                         .thenComparing(CategorySummary::categoryName))
                         .toList();
-        return new MonthlySummary(total(spent.values()), total(limits.values()), categories);
+
+        List<CategoryIncome> income =
+                transactions
+                        .incomeByCategory(userId, period.atDay(1), period.atEndOfMonth())
+                        .stream()
+                        .filter(category -> category.received().signum() != 0)
+                        .sorted(
+                                comparing(CategoryIncome::received)
+                                        .reversed()
+                                        .thenComparing(CategoryIncome::categoryName))
+                        .toList();
+        BigDecimal totalIncome = total(income.stream().map(CategoryIncome::received).toList());
+
+        return new MonthlySummary(
+                total(spent.values()), total(limits.values()), totalIncome, categories, income);
     }
 
     private static BigDecimal total(Collection<BigDecimal> amounts) {

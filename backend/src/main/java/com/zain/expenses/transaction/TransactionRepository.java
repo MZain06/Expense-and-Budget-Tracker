@@ -1,5 +1,6 @@
 package com.zain.expenses.transaction;
 
+import com.zain.expenses.category.CategoryKind;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -40,31 +41,56 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             @Param("firstDay") LocalDate firstDay,
             @Param("lastDay") LocalDate lastDay);
 
-    /** Totals a user's spending per category, in one grouped query. */
+    /** Totals the money in and the money out of each category of one kind. */
     @Query(
             """
-            select new com.zain.expenses.transaction.CategorySpending(c.id, c.name, sum(t.amount))
+            select new com.zain.expenses.transaction.CategoryTotal(
+                c.id, c.name, t.direction, sum(t.amount))
             from Transaction t join t.category c
             where t.user.id = :userId
+              and c.kind = :kind
               and t.occurredOn between :firstDay and :lastDay
-            group by c.id, c.name
+            group by c.id, c.name, t.direction
             """)
-    List<CategorySpending> spendingByCategory(
+    List<CategoryTotal> totalsByCategory(
             @Param("userId") Long userId,
+            @Param("kind") CategoryKind kind,
             @Param("firstDay") LocalDate firstDay,
             @Param("lastDay") LocalDate lastDay);
 
-    /** Totals a user's spending per day. Days with nothing spent don't appear. */
+    /** Totals the money in and the money out on each day, for categories of one kind. */
     @Query(
             """
-            select new com.zain.expenses.transaction.DailySpending(t.occurredOn, sum(t.amount))
-            from Transaction t
+            select new com.zain.expenses.transaction.DailyTotal(
+                t.occurredOn, t.direction, sum(t.amount))
+            from Transaction t join t.category c
             where t.user.id = :userId
+              and c.kind = :kind
               and t.occurredOn between :firstDay and :lastDay
-            group by t.occurredOn
+            group by t.occurredOn, t.direction
             """)
-    List<DailySpending> spendingByDay(
+    List<DailyTotal> totalsByDay(
             @Param("userId") Long userId,
+            @Param("kind") CategoryKind kind,
             @Param("firstDay") LocalDate firstDay,
             @Param("lastDay") LocalDate lastDay);
+
+    /** Spending per category: what went out, less any refunds. */
+    default List<CategorySpending> spendingByCategory(
+            Long userId, LocalDate firstDay, LocalDate lastDay) {
+        return CategorySpending.netOf(
+                totalsByCategory(userId, CategoryKind.SPENDING, firstDay, lastDay));
+    }
+
+    /** Money received per income category. */
+    default List<CategoryIncome> incomeByCategory(
+            Long userId, LocalDate firstDay, LocalDate lastDay) {
+        return CategoryIncome.netOf(
+                totalsByCategory(userId, CategoryKind.INCOME, firstDay, lastDay));
+    }
+
+    /** Spending per day, less any refunds. Days with nothing spent don't appear. */
+    default List<DailySpending> spendingByDay(Long userId, LocalDate firstDay, LocalDate lastDay) {
+        return DailySpending.netOf(totalsByDay(userId, CategoryKind.SPENDING, firstDay, lastDay));
+    }
 }
