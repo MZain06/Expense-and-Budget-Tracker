@@ -29,12 +29,18 @@ public class CategoryService {
         if (categories.existsByUserIdAndNameIgnoreCase(userId, name)) {
             throw new DuplicateCategoryException(name);
         }
-        Category category = categories.save(new Category(users.getReferenceById(userId), name));
+        CategoryKind kind = request.kind() != null ? request.kind() : CategoryKind.SPENDING;
+        Category category =
+                categories.save(new Category(users.getReferenceById(userId), name, kind));
         return CategoryResponse.from(category);
     }
 
+    /**
+     * Renames a category, and changes its kind if one is given. Only spending has budgets, so a
+     * category that becomes income loses its budgets.
+     */
     @Transactional
-    public CategoryResponse rename(Long userId, Long id, CategoryRequest request) {
+    public CategoryResponse update(Long userId, Long id, CategoryRequest request) {
         Category category = findOwnedCategory(userId, id);
         String name = tidy(request.name());
         // Another category with the same name is a clash; changing the case of this one isn't.
@@ -42,6 +48,12 @@ public class CategoryService {
             throw new DuplicateCategoryException(name);
         }
         category.rename(name);
+        if (request.kind() != null && request.kind() != category.getKind()) {
+            category.changeKind(request.kind());
+            if (request.kind() == CategoryKind.INCOME) {
+                categories.deleteBudgets(category);
+            }
+        }
         return CategoryResponse.from(category);
     }
 

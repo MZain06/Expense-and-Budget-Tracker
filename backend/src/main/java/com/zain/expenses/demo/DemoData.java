@@ -1,5 +1,6 @@
 package com.zain.expenses.demo;
 
+import com.zain.expenses.transaction.Direction;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
@@ -15,6 +16,8 @@ final class DemoData {
 
     static final List<String> CATEGORIES =
             List.of("Bills", "Entertainment", "Food", "Health", "Other", "Shopping", "Transport");
+
+    static final List<String> INCOME_CATEGORIES = List.of("Other income", "Salary");
 
     static final Map<String, BigDecimal> MONTHLY_BUDGETS =
             Map.of(
@@ -65,6 +68,11 @@ final class DemoData {
         }
         builder.some("Health", 0, 1, 4, 16, "Boots");
         builder.some("Other", 0, 2, 6, 35, "Haircut", "Gift", "Post Office");
+
+        // Money in comes last, so the spending above stays the same as before it was added.
+        builder.received("Salary", 1350, 1, "Salary");
+        builder.someReceived("Other income", 0, 2, 8, 35, "Vinted sale", "Cashback");
+        builder.refundOne("Shopping", 0.3);
         return builder.transactions;
     }
 
@@ -80,12 +88,21 @@ final class DemoData {
         }
 
         void fixed(String category, double amount, int day, String note) {
-            add(category, amount, month.atDay(Math.min(day, month.lengthOfMonth())), note);
+            add(category, Direction.OUT, pounds(amount), dayOfMonth(day), note);
+        }
+
+        void received(String category, double amount, int day, String note) {
+            add(category, Direction.IN, pounds(amount), dayOfMonth(day), note);
         }
 
         void weekly(String category, double min, double max, String... notes) {
             for (int day = 1 + random.nextInt(7); day <= month.lengthOfMonth(); day += 7) {
-                add(category, between(min, max), month.atDay(day), pick(notes));
+                add(
+                        category,
+                        Direction.OUT,
+                        pounds(between(min, max)),
+                        month.atDay(day),
+                        pick(notes));
             }
         }
 
@@ -94,17 +111,64 @@ final class DemoData {
                 DayOfWeek weekday = month.atDay(day).getDayOfWeek();
                 boolean weekend = weekday == DayOfWeek.SATURDAY || weekday == DayOfWeek.SUNDAY;
                 if (!weekend && random.nextDouble() < chance) {
-                    add(category, between(min, max), month.atDay(day), pick(notes));
+                    add(
+                            category,
+                            Direction.OUT,
+                            pounds(between(min, max)),
+                            month.atDay(day),
+                            pick(notes));
                 }
             }
         }
 
         void some(String category, int fewest, int most, double min, double max, String... notes) {
+            several(category, Direction.OUT, fewest, most, min, max, notes);
+        }
+
+        void someReceived(
+                String category, int fewest, int most, double min, double max, String... notes) {
+            several(category, Direction.IN, fewest, most, min, max, notes);
+        }
+
+        /** Sometimes sends back one of this month's purchases a few days after it was made. */
+        void refundOne(String category, double chance) {
+            List<DemoTransaction> purchases =
+                    transactions.stream()
+                            .filter(t -> t.category().equals(category))
+                            .filter(t -> t.direction() == Direction.OUT)
+                            .toList();
+            if (purchases.isEmpty() || random.nextDouble() >= chance) {
+                return;
+            }
+            DemoTransaction purchase = purchases.get(random.nextInt(purchases.size()));
+            LocalDate refunded = purchase.date().plusDays(3 + random.nextInt(8));
+            if (YearMonth.from(refunded).equals(month)) {
+                add(
+                        category,
+                        Direction.IN,
+                        purchase.amount(),
+                        refunded,
+                        purchase.note() + " refund");
+            }
+        }
+
+        private void several(
+                String category,
+                Direction direction,
+                int fewest,
+                int most,
+                double min,
+                double max,
+                String... notes) {
             int count = fewest + random.nextInt(most - fewest + 1);
             for (int i = 0; i < count; i++) {
                 int day = 1 + random.nextInt(month.lengthOfMonth());
-                add(category, between(min, max), month.atDay(day), pick(notes));
+                add(category, direction, pounds(between(min, max)), month.atDay(day), pick(notes));
             }
+        }
+
+        private LocalDate dayOfMonth(int day) {
+            return month.atDay(Math.min(day, month.lengthOfMonth()));
         }
 
         private double between(double min, double max) {
@@ -115,9 +179,17 @@ final class DemoData {
             return notes[random.nextInt(notes.length)];
         }
 
-        private void add(String category, double amount, LocalDate date, String note) {
-            BigDecimal pounds = BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP);
-            transactions.add(new DemoTransaction(category, pounds, date, note));
+        private void add(
+                String category,
+                Direction direction,
+                BigDecimal amount,
+                LocalDate date,
+                String note) {
+            transactions.add(new DemoTransaction(category, direction, amount, date, note));
+        }
+
+        private static BigDecimal pounds(double amount) {
+            return BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP);
         }
     }
 }

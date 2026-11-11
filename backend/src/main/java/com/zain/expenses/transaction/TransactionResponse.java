@@ -6,6 +6,7 @@ import java.time.LocalDate;
 public record TransactionResponse(
         Long id,
         BigDecimal amount,
+        Direction direction,
         LocalDate occurredOn,
         String note,
         Long categoryId,
@@ -15,6 +16,7 @@ public record TransactionResponse(
         return new TransactionResponse(
                 transaction.getId(),
                 transaction.getAmount(),
+                transaction.getDirection(),
                 transaction.getOccurredOn(),
                 transaction.getNote(),
                 transaction.getCategory().getId(),

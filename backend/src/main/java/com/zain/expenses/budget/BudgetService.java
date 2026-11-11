@@ -1,6 +1,7 @@
 package com.zain.expenses.budget;
 
 import com.zain.expenses.category.Category;
+import com.zain.expenses.category.CategoryKind;
 import com.zain.expenses.category.CategoryNotFoundException;
 import com.zain.expenses.category.CategoryRepository;
 import com.zain.expenses.user.UserRepository;
@@ -46,6 +47,9 @@ public class BudgetService {
     public BudgetResponse set(
             Long userId, YearMonth month, Long categoryId, BudgetRequest request) {
         Category category = findOwnedCategory(userId, categoryId);
+        if (category.getKind() == CategoryKind.INCOME) {
+            throw new IncomeCategoryBudgetException(category.getName());
+        }
         Optional<Budget> existing =
                 budgets.findByUserIdAndCategoryIdAndMonth(userId, categoryId, month.atDay(1));
         if (existing.isPresent()) {

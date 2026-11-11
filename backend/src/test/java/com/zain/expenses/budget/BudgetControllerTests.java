@@ -95,6 +95,21 @@ class BudgetControllerTests {
     }
 
     @Test
+    void refusesABudgetForAnIncomeCategory() throws Exception {
+        long salary = categoryId(mockMvc, zain, "Salary");
+
+        mockMvc.perform(
+                        put("/api/budgets/{month}/{categoryId}", "2026-10", salary)
+                                .header(AUTHORIZATION, zain)
+                                .contentType(APPLICATION_JSON)
+                                .content(limitJson("100.00")))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.detail")
+                                .value("Salary is an income category, so it can't have a budget"));
+    }
+
+    @Test
     void removingABudgetIsSafeToRepeat() throws Exception {
         setBudget(mockMvc, zain, "2026-10", food, "200.00");
 

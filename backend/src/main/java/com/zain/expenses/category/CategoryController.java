@@ -37,11 +37,11 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public CategoryResponse rename(
+    public CategoryResponse update(
             @CurrentUserId Long userId,
             @PathVariable("id") Long id,
             @Valid @RequestBody CategoryRequest request) {
-        return categoryService.rename(userId, id, request);
+        return categoryService.update(userId, id, request);
     }
 
     @DeleteMapping("/{id}")

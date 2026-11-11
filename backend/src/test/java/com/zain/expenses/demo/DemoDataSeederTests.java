@@ -48,6 +48,11 @@ class DemoDataSeederTests {
         mockMvc.perform(get("/api/budgets").header(AUTHORIZATION, demo))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(6));
+
+        mockMvc.perform(get("/api/summary").header(AUTHORIZATION, demo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.income[0].categoryName").value("Salary"))
+                .andExpect(jsonPath("$.income[0].received").value(1350.0));
     }
 
     @Test

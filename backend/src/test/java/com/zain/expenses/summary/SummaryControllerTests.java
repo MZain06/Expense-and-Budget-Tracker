@@ -2,6 +2,7 @@ package com.zain.expenses.summary;
 
 import static com.zain.expenses.TestAuth.bearerTokenFor;
 import static com.zain.expenses.TestAuth.categoryId;
+import static com.zain.expenses.TestData.addMoneyIn;
 import static com.zain.expenses.TestData.addTransaction;
 import static com.zain.expenses.TestData.setBudget;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -53,6 +54,25 @@ class SummaryControllerTests {
                 .andExpect(jsonPath("$.categories[2].categoryName").value("Transport"))
                 .andExpect(jsonPath("$.categories[2].spent").value(0.0))
                 .andExpect(jsonPath("$.categories[2].remaining").value(50.0));
+    }
+
+    @Test
+    void takesRefundsOffSpendingAndAddsUpIncomeSeparately() throws Exception {
+        String zain = bearerTokenFor(mockMvc, "zain@example.com");
+        long shopping = categoryId(mockMvc, zain, "Shopping");
+        addTransaction(mockMvc, zain, shopping, "50.00", "2026-10-03");
+        addMoneyIn(mockMvc, zain, shopping, "20.00", "2026-10-07");
+        addMoneyIn(mockMvc, zain, categoryId(mockMvc, zain, "Salary"), "1350.00", "2026-10-01");
+
+        mockMvc.perform(get("/api/summary").param("month", "2026-10").header(AUTHORIZATION, zain))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalSpent").value(30.0))
+                .andExpect(jsonPath("$.categories.length()").value(1))
+                .andExpect(jsonPath("$.categories[0].spent").value(30.0))
+                .andExpect(jsonPath("$.totalIncome").value(1350.0))
+                .andExpect(jsonPath("$.income.length()").value(1))
+                .andExpect(jsonPath("$.income[0].categoryName").value("Salary"))
+                .andExpect(jsonPath("$.income[0].received").value(1350.0));
     }
 
     @Test
