@@ -3,6 +3,7 @@ package com.zain.expenses.demo;
 import com.zain.expenses.budget.Budget;
 import com.zain.expenses.budget.BudgetRepository;
 import com.zain.expenses.category.Category;
+import com.zain.expenses.category.CategoryKind;
 import com.zain.expenses.category.CategoryRepository;
 import com.zain.expenses.transaction.Transaction;
 import com.zain.expenses.transaction.TransactionRepository;
@@ -67,6 +68,9 @@ class DemoDataSeeder implements ApplicationRunner {
         for (String name : DemoData.CATEGORIES) {
             byName.put(name, categories.save(new Category(user, name)));
         }
+        for (String name : DemoData.INCOME_CATEGORIES) {
+            byName.put(name, categories.save(new Category(user, name, CategoryKind.INCOME)));
+        }
 
         LocalDate today = LocalDate.now(clock);
         transactions.saveAll(
@@ -76,6 +80,7 @@ class DemoDataSeeder implements ApplicationRunner {
                                         new Transaction(
                                                 user,
                                                 byName.get(demo.category()),
+                                                demo.direction(),
                                                 demo.amount(),
                                                 demo.date(),
                                                 demo.note()))
