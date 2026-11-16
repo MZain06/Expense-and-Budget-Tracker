@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from "react";
 import { type BudgetChange, useSaveBudgets } from "../hooks/useBudgets";
 import { formatMoney, sumAmounts } from "../lib/money";
-import type { Budget, Category } from "../types/api";
+import type { Budget, Category, SuggestedBudget } from "../types/api";
 import { Button } from "./Button";
 
 // The same rule as the backend's @Digits: up to 10 digits and 2 decimal places.
@@ -11,12 +11,23 @@ type BudgetFormProps = {
   month: string;
   categories: Category[];
   budgets: Budget[];
+  /** Limits to fill in for checking before they're saved. */
+  suggested?: SuggestedBudget[];
+  onSaved?: () => void;
 };
 
 /** One row per category. Only the rows you change are saved; an empty row has no limit. */
-export function BudgetForm({ month, categories, budgets }: BudgetFormProps) {
+export function BudgetForm({
+  month,
+  categories,
+  budgets,
+  suggested = [],
+  onSaved,
+}: BudgetFormProps) {
   const saved = new Map(budgets.map((budget) => [budget.categoryId, budget.limit]));
-  const [drafts, setDrafts] = useState<Record<number, string>>({});
+  const [drafts, setDrafts] = useState<Record<number, string>>(() =>
+    Object.fromEntries(suggested.map((budget) => [budget.categoryId, budget.limit.toFixed(2)])),
+  );
   const [errors, setErrors] = useState<Record<number, string>>({});
   const saveBudgets = useSaveBudgets(month);
 
@@ -47,9 +58,15 @@ export function BudgetForm({ month, categories, budgets }: BudgetFormProps) {
     }
     if (changes.length === 0) {
       setDrafts({});
+      onSaved?.();
       return;
     }
-    saveBudgets.mutate(changes, { onSuccess: () => setDrafts({}) });
+    saveBudgets.mutate(changes, {
+      onSuccess: () => {
+        setDrafts({});
+        onSaved?.();
+      },
+    });
   }
 
   const total = sumAmounts(budgets.map((budget) => budget.limit));
