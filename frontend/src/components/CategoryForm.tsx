@@ -3,48 +3,53 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { ApiError } from "../api/client";
 import { Button } from "./Button";
+import { SelectField } from "./SelectField";
 import { TextField } from "./TextField";
 
-const nameSchema = z.object({
+const categorySchema = z.object({
   name: z.string().trim().min(1, "Enter a name").max(50, "Keep it to 50 characters or fewer"),
+  kind: z.enum(["SPENDING", "INCOME"]),
 });
 
-type NameValues = z.infer<typeof nameSchema>;
+type CategoryValues = z.infer<typeof categorySchema>;
 
-type CategoryNameFormProps = {
-  label: string;
+type CategoryFormProps = {
+  /** The form's accessible name, like "Add a category". */
+  title: string;
+  nameLabel: string;
   submitLabel: string;
-  defaultName?: string;
+  defaultValues?: CategoryValues;
   autoFocus?: boolean;
-  /** Saves the name. If it throws an ApiError, the server's message appears under the field. */
-  onSave: (name: string) => Promise<unknown>;
+  /** Saves the category. If it throws an ApiError, the server's message appears under the name. */
+  onSave: (values: CategoryValues) => Promise<unknown>;
   onCancel?: () => void;
 };
 
-/** The one-field form used both to add a category and to rename one. */
-export function CategoryNameForm({
-  label,
+/** The form used both to add a category and to edit one. */
+export function CategoryForm({
+  title,
+  nameLabel,
   submitLabel,
-  defaultName = "",
+  defaultValues = { name: "", kind: "SPENDING" },
   autoFocus = false,
   onSave,
   onCancel,
-}: CategoryNameFormProps) {
+}: CategoryFormProps) {
   const {
     register,
     handleSubmit,
     setError,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<NameValues>({
-    resolver: zodResolver(nameSchema),
-    defaultValues: { name: defaultName },
+  } = useForm<CategoryValues>({
+    resolver: zodResolver(categorySchema),
+    defaultValues,
   });
 
-  async function onSubmit(values: NameValues) {
+  async function onSubmit(values: CategoryValues) {
     try {
-      await onSave(values.name);
-      reset({ name: "" });
+      await onSave(values);
+      reset({ name: "", kind: values.kind });
     } catch (error) {
       setError("name", {
         message:
@@ -57,17 +62,22 @@ export function CategoryNameForm({
 
   return (
     <form
+      aria-label={title}
       onSubmit={handleSubmit(onSubmit)}
       noValidate
-      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start"
+      className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto] sm:items-start"
     >
       <TextField
-        label={label}
+        label={nameLabel}
         autoComplete="off"
         autoFocus={autoFocus}
         error={errors.name?.message}
         {...register("name")}
       />
+      <SelectField label="Type" {...register("kind")}>
+        <option value="SPENDING">Spending</option>
+        <option value="INCOME">Income</option>
+      </SelectField>
       <div className="flex gap-2 sm:mt-6">
         <Button type="submit" disabled={isSubmitting}>
           {submitLabel}

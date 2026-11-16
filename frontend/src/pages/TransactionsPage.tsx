@@ -24,7 +24,8 @@ export function TransactionsPage() {
   const deleteTransaction = useDeleteTransaction();
 
   const items = transactions.data ?? [];
-  const total = sumAmounts(items.map((transaction) => transaction.amount));
+  const moneyOut = sumAmounts(items.filter((t) => t.direction === "OUT").map((t) => t.amount));
+  const moneyIn = sumAmounts(items.filter((t) => t.direction === "IN").map((t) => t.amount));
   const categoryName = categories.data?.find((category) => category.id === categoryId)?.name;
 
   async function handleSave(input: TransactionInput) {
@@ -48,9 +49,21 @@ export function TransactionsPage() {
         <MonthSwitcher month={month} onChange={setMonth} />
         {transactions.isSuccess && (
           <p className="text-muted">
-            <span className="font-semibold text-ink tabular-nums">{formatMoney(total)}</span> spent
-            {categoryName ? ` on ${categoryName}` : ""} across {items.length}{" "}
-            {items.length === 1 ? "transaction" : "transactions"}
+            {categoryName && `${categoryName}: `}
+            {(moneyOut > 0 || moneyIn === 0) && (
+              <>
+                <span className="font-semibold text-ink tabular-nums">{formatMoney(moneyOut)}</span>{" "}
+                spent
+              </>
+            )}
+            {moneyOut > 0 && moneyIn > 0 && " and "}
+            {moneyIn > 0 && (
+              <>
+                <span className="font-semibold text-ink tabular-nums">{formatMoney(moneyIn)}</span>{" "}
+                received
+              </>
+            )}{" "}
+            across {items.length} {items.length === 1 ? "transaction" : "transactions"}
           </p>
         )}
       </section>

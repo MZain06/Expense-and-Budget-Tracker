@@ -11,14 +11,20 @@ export type TokenResponse = {
   expiresIn: number;
 };
 
+export type CategoryKind = "SPENDING" | "INCOME";
+
 export type Category = {
   id: number;
   name: string;
+  kind: CategoryKind;
 };
+
+export type Direction = "OUT" | "IN";
 
 export type Transaction = {
   id: number;
   amount: number;
+  direction: Direction;
   occurredOn: string;
   note: string | null;
   categoryId: number;
@@ -27,6 +33,7 @@ export type Transaction = {
 
 export type TransactionInput = {
   amount: number;
+  direction: Direction;
   categoryId: number;
   occurredOn: string;
   note: string | null;
@@ -46,10 +53,18 @@ export type CategorySummary = {
   remaining: number | null;
 };
 
+export type CategoryIncome = {
+  categoryId: number;
+  categoryName: string;
+  received: number;
+};
+
 export type MonthlySummary = {
   totalSpent: number;
   totalBudget: number;
+  totalIncome: number;
   categories: CategorySummary[];
+  income: CategoryIncome[];
 };
 
 export type MonthTotal = {

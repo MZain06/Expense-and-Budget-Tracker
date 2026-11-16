@@ -1,22 +1,22 @@
 import { useState } from "react";
 import { ApiError } from "../api/client";
 import { Button } from "../components/Button";
-import { CategoryNameForm } from "../components/CategoryNameForm";
+import { CategoryForm } from "../components/CategoryForm";
 import { PencilIcon, TrashIcon } from "../components/icons";
 import {
   useCategories,
   useCreateCategory,
   useDeleteCategory,
-  useRenameCategory,
+  useUpdateCategory,
 } from "../hooks/useCategories";
-import type { Category } from "../types/api";
+import type { Category, CategoryKind } from "../types/api";
 
 export function CategoriesPage() {
   const categories = useCategories();
   const createCategory = useCreateCategory();
-  const renameCategory = useRenameCategory();
+  const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
-  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   function handleDelete(category: Category) {
     if (window.confirm(`Delete ${category.name}?`)) {
@@ -32,21 +32,80 @@ export function CategoriesPage() {
         ? "Couldn't delete that category. Try again."
         : null;
 
+  function list(heading: string, kind: CategoryKind) {
+    const items = categories.data?.filter((category) => category.kind === kind) ?? [];
+    const headingId = `${kind.toLowerCase()}-heading`;
+    return (
+      <section aria-labelledby={headingId} className="space-y-2">
+        <h2 id={headingId} className="font-semibold">
+          {heading}
+        </h2>
+        {items.length === 0 ? (
+          <p className="text-sm text-muted">None yet.</p>
+        ) : (
+          <ul className="divide-y divide-line rounded-lg border border-line bg-surface px-4">
+            {items.map((category) => (
+              <li key={category.id} className="py-3">
+                {editingId === category.id ? (
+                  <CategoryForm
+                    title={`Edit ${category.name}`}
+                    nameLabel="Name"
+                    submitLabel="Save"
+                    defaultValues={{ name: category.name, kind: category.kind }}
+                    autoFocus
+                    onSave={async (values) => {
+                      await updateCategory.mutateAsync({ id: category.id, ...values });
+                      setEditingId(null);
+                    }}
+                    onCancel={() => setEditingId(null)}
+                  />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate font-medium">{category.name}</span>
+                    <Button
+                      variant="quiet"
+                      size="icon"
+                      aria-label={`Edit ${category.name}`}
+                      title="Edit"
+                      onClick={() => setEditingId(category.id)}
+                    >
+                      <PencilIcon />
+                    </Button>
+                    <Button
+                      variant="quietDanger"
+                      size="icon"
+                      aria-label={`Delete ${category.name}`}
+                      title="Delete"
+                      onClick={() => handleDelete(category)}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <section>
         <h1 className="text-3xl font-semibold tracking-tight">Categories</h1>
         <p className="mt-2 text-muted">
-          Add your own categories or rename the ones you have. A category can only be deleted once
-          nothing is filed under it.
+          Spending categories can have budgets. Income categories are for money coming in, like your
+          pay. A category can only be deleted once nothing is filed under it.
         </p>
       </section>
 
       <div className="rounded-lg border border-line bg-surface p-4 sm:p-6">
-        <CategoryNameForm
-          label="New category"
+        <CategoryForm
+          title="Add a category"
+          nameLabel="New category"
           submitLabel="Add category"
-          onSave={(name) => createCategory.mutateAsync(name)}
+          onSave={(values) => createCategory.mutateAsync(values)}
         />
       </div>
 
@@ -70,47 +129,10 @@ export function CategoriesPage() {
           You don't have any categories yet. Add one above to start sorting your spending.
         </p>
       ) : (
-        <ul className="divide-y divide-line rounded-lg border border-line bg-surface px-4">
-          {categories.data.map((category) => (
-            <li key={category.id} className="py-3">
-              {renamingId === category.id ? (
-                <CategoryNameForm
-                  label={`Rename ${category.name}`}
-                  submitLabel="Save"
-                  defaultName={category.name}
-                  autoFocus
-                  onSave={async (name) => {
-                    await renameCategory.mutateAsync({ id: category.id, name });
-                    setRenamingId(null);
-                  }}
-                  onCancel={() => setRenamingId(null)}
-                />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate font-medium">{category.name}</span>
-                  <Button
-                    variant="quiet"
-                    size="icon"
-                    aria-label={`Rename ${category.name}`}
-                    title="Rename"
-                    onClick={() => setRenamingId(category.id)}
-                  >
-                    <PencilIcon />
-                  </Button>
-                  <Button
-                    variant="quietDanger"
-                    size="icon"
-                    aria-label={`Delete ${category.name}`}
-                    title="Delete"
-                    onClick={() => handleDelete(category)}
-                  >
-                    <TrashIcon />
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+        <>
+          {list("Spending", "SPENDING")}
+          {list("Income", "INCOME")}
+        </>
       )}
     </div>
   );

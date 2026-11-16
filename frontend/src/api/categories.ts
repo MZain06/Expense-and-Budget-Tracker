@@ -1,21 +1,21 @@
-import type { Category } from "../types/api";
+import type { Category, CategoryKind } from "../types/api";
 import { apiFetch } from "./client";
 
 export function fetchCategories(): Promise<Category[]> {
   return apiFetch<Category[]>("/categories");
 }
 
-export function createCategory(name: string): Promise<Category> {
+export function createCategory(name: string, kind: CategoryKind): Promise<Category> {
   return apiFetch<Category>("/categories", {
     method: "POST",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, kind }),
   });
 }
 
-export function renameCategory(id: number, name: string): Promise<Category> {
+export function updateCategory(id: number, name: string, kind: CategoryKind): Promise<Category> {
   return apiFetch<Category>(`/categories/${id}`, {
     method: "PUT",
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, kind }),
   });
 }
 

@@ -60,7 +60,13 @@ export function TransactionList({ transactions, onEdit, onDelete }: TransactionL
                         <p className="text-sm text-muted">{transaction.categoryName}</p>
                       )}
                     </div>
-                    <p className="font-medium tabular-nums">{formatMoney(transaction.amount)}</p>
+                    {transaction.direction === "IN" ? (
+                      <p className="font-medium text-brand tabular-nums">
+                        +{formatMoney(transaction.amount)}
+                      </p>
+                    ) : (
+                      <p className="font-medium tabular-nums">{formatMoney(transaction.amount)}</p>
+                    )}
                     <div className="flex">
                       <Button
                         variant="quiet"

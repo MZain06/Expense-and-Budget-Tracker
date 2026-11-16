@@ -58,9 +58,10 @@ function BudgetMeter({ category }: { category: CategorySummary }) {
         </span>
       </div>
       <div aria-hidden="true" className={`mt-1.5 h-2 overflow-hidden rounded-full ${track}`}>
+        {/* Refunds can take spending below zero, so the bar is kept between empty and full. */}
         <div
           className={`h-full rounded-full ${fill}`}
-          style={{ width: `${Math.min(used, 1) * 100}%` }}
+          style={{ width: `${Math.min(Math.max(used, 0), 1) * 100}%` }}
         />
       </div>
       {state === "over" ? (

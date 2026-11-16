@@ -14,6 +14,7 @@ export function BudgetsPage() {
   const budgets = useBudgets(month);
   const previousBudgets = useBudgets(previousMonth);
   const copyBudgets = useCopyBudgets(month);
+  const spending = categories.data?.filter((category) => category.kind === "SPENDING") ?? [];
 
   // Offer to copy last month's budgets when some of them aren't set this month yet.
   const alreadySet = new Set(budgets.data?.map((budget) => budget.categoryId));
@@ -59,16 +60,16 @@ export function BudgetsPage() {
             Try again
           </Button>
         </div>
-      ) : categories.data.length === 0 ? (
+      ) : spending.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line px-6 py-10 text-center text-muted">
-          You don't have any categories yet.{" "}
+          You don't have any spending categories yet.{" "}
           <Link to="/categories" className="font-medium text-brand hover:underline">
             Add one
           </Link>{" "}
           to set a budget.
         </p>
       ) : (
-        <BudgetForm key={month} month={month} categories={categories.data} budgets={budgets.data} />
+        <BudgetForm key={month} month={month} categories={spending} budgets={budgets.data} />
       )}
     </div>
   );
