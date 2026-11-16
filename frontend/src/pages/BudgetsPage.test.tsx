@@ -24,8 +24,9 @@ describe("BudgetsPage", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 16, 12));
     vi.mocked(fetchCategories).mockResolvedValue([
-      { id: 1, name: "Food" },
-      { id: 2, name: "Transport" },
+      { id: 1, name: "Food", kind: "SPENDING" },
+      { id: 2, name: "Transport", kind: "SPENDING" },
+      { id: 3, name: "Salary", kind: "INCOME" },
     ]);
     vi.mocked(fetchBudgets).mockImplementation(async (month) =>
       month === "2026-10" ? [{ categoryId: 1, categoryName: "Food", limit: 200 }] : [],
@@ -41,6 +42,7 @@ describe("BudgetsPage", () => {
 
     expect(await screen.findByLabelText("Food budget (£)")).toHaveValue("200.00");
     expect(screen.getByLabelText("Transport budget (£)")).toHaveValue("");
+    expect(screen.queryByLabelText("Salary budget (£)")).not.toBeInTheDocument();
     expect(screen.getByText("£200.00 budgeted across 1 category")).toBeInTheDocument();
   });
 

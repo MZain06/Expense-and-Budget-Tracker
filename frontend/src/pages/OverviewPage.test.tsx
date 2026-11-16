@@ -13,10 +13,15 @@ vi.mock("../api/insights");
 const summary: MonthlySummary = {
   totalSpent: 782.88,
   totalBudget: 225,
+  totalIncome: 1370,
   categories: [
     { categoryId: 1, categoryName: "Bills", spent: 650, budget: null, remaining: null },
     { categoryId: 3, categoryName: "Food", spent: 107.5, budget: 200, remaining: 92.5 },
     { categoryId: 7, categoryName: "Transport", spent: 25.38, budget: 25, remaining: -0.38 },
+  ],
+  income: [
+    { categoryId: 8, categoryName: "Salary", received: 1350 },
+    { categoryId: 9, categoryName: "Other income", received: 20 },
   ],
 };
 
@@ -76,6 +81,27 @@ describe("OverviewPage", () => {
     expect(fetchSummary).toHaveBeenCalledWith("2026-10");
   });
 
+  it("shows money in and what's left after spending", async () => {
+    renderPage();
+
+    const moneyIn = await screen.findByRole("region", { name: "Money in" });
+    expect(within(moneyIn).getByText("£1,370.00")).toBeInTheDocument();
+    expect(within(moneyIn).getByText("£587.12 left after spending so far")).toBeInTheDocument();
+    expect(within(moneyIn).getByText("Salary")).toBeInTheDocument();
+  });
+
+  it("hides money in until it's asked for again", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Hide money in" }));
+
+    expect(screen.queryByRole("region", { name: "Money in" })).not.toBeInTheDocument();
+    expect(localStorage.getItem("expense-tracker.show-income")).toBe("no");
+    await user.click(screen.getByRole("button", { name: "Show money in" }));
+    expect(screen.getByRole("region", { name: "Money in" })).toBeInTheDocument();
+  });
+
   it("shows where the money went and how each budget is doing", async () => {
     renderPage();
 
@@ -110,7 +136,13 @@ describe("OverviewPage", () => {
   });
 
   it("explains a month with nothing in it", async () => {
-    vi.mocked(fetchSummary).mockResolvedValue({ totalSpent: 0, totalBudget: 0, categories: [] });
+    vi.mocked(fetchSummary).mockResolvedValue({
+      totalSpent: 0,
+      totalBudget: 0,
+      totalIncome: 0,
+      categories: [],
+      income: [],
+    });
     vi.mocked(fetchInsights).mockResolvedValue({
       ...insights,
       spent: 0,
@@ -121,6 +153,7 @@ describe("OverviewPage", () => {
     renderPage();
 
     expect(await screen.findByText("No spending in October.")).toBeInTheDocument();
+    expect(screen.getByText(/Nothing received in October yet/)).toBeInTheDocument();
     expect(screen.getByText(/No budgets for October/)).toBeInTheDocument();
     expect(screen.getByText("No category has changed.")).toBeInTheDocument();
   });
