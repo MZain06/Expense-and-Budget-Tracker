@@ -19,6 +19,7 @@ const october: Transaction[] = [
   {
     id: 11,
     amount: 2.8,
+    direction: "OUT",
     occurredOn: "2026-10-15",
     note: "Bus",
     categoryId: 2,
@@ -27,6 +28,7 @@ const october: Transaction[] = [
   {
     id: 10,
     amount: 12.5,
+    direction: "OUT",
     occurredOn: "2026-10-03",
     note: "Lunch",
     categoryId: 1,
@@ -34,8 +36,25 @@ const october: Transaction[] = [
   },
 ];
 
+const pay: Transaction = {
+  id: 9,
+  amount: 1350,
+  direction: "IN",
+  occurredOn: "2026-10-01",
+  note: "October pay",
+  categoryId: 3,
+  categoryName: "Salary",
+};
+
 function renderPage() {
   renderRoutes([{ path: "/", element: <TransactionsPage /> }], "/");
+}
+
+async function openTheForm(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Add transaction" }));
+  const category = screen.getByLabelText("Category");
+  await within(category).findByRole("option", { name: "Food" });
+  return category;
 }
 
 describe("TransactionsPage", () => {
@@ -44,8 +63,9 @@ describe("TransactionsPage", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date(2026, 9, 16, 12));
     vi.mocked(fetchCategories).mockResolvedValue([
-      { id: 1, name: "Food" },
-      { id: 2, name: "Transport" },
+      { id: 1, name: "Food", kind: "SPENDING" },
+      { id: 2, name: "Transport", kind: "SPENDING" },
+      { id: 3, name: "Salary", kind: "INCOME" },
     ]);
     vi.mocked(fetchTransactions).mockResolvedValue(october);
   });
@@ -60,10 +80,20 @@ describe("TransactionsPage", () => {
     expect(screen.getByRole("heading", { name: "October 2026" })).toBeInTheDocument();
     expect(await screen.findByText("Lunch")).toBeInTheDocument();
     expect(screen.getByText("Bus")).toBeInTheDocument();
-    expect(screen.getByText(/spent across 2 transactions/)).toHaveTextContent(
+    expect(screen.getByText(/across 2 transactions/)).toHaveTextContent(
       "£15.30 spent across 2 transactions",
     );
     expect(fetchTransactions).toHaveBeenCalledWith("2026-10", null);
+  });
+
+  it("shows money received next to money spent", async () => {
+    vi.mocked(fetchTransactions).mockResolvedValue([...october, pay]);
+    renderPage();
+
+    expect(await screen.findByText("+£1,350.00")).toBeInTheDocument();
+    expect(screen.getByText(/across 3 transactions/)).toHaveTextContent(
+      "£15.30 spent and £1,350.00 received across 3 transactions",
+    );
   });
 
   it("moves to the previous month", async () => {
@@ -93,9 +123,7 @@ describe("TransactionsPage", () => {
     renderPage();
     await screen.findByText("Lunch");
 
-    await user.click(screen.getByRole("button", { name: "Add transaction" }));
-    const category = screen.getByLabelText("Category");
-    await within(category).findByRole("option", { name: "Food" });
+    const category = await openTheForm(user);
     await user.type(screen.getByLabelText("Amount (£)"), "4.20");
     await user.selectOptions(category, "Food");
     await user.type(screen.getByLabelText("Note"), "Coffee");
@@ -103,11 +131,46 @@ describe("TransactionsPage", () => {
 
     expect(createTransaction).toHaveBeenCalledWith({
       amount: 4.2,
+      direction: "OUT",
       categoryId: 1,
       occurredOn: "2026-10-16",
       note: "Coffee",
     });
     expect(screen.queryByRole("button", { name: "Save transaction" })).not.toBeInTheDocument();
+  });
+
+  it("makes it money in when an income category is picked", async () => {
+    vi.mocked(createTransaction).mockResolvedValue(pay);
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Lunch");
+
+    const category = await openTheForm(user);
+    await user.type(screen.getByLabelText("Amount (£)"), "1350");
+    await user.selectOptions(category, "Salary");
+
+    expect(screen.getByRole("radio", { name: "Money in" })).toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Save transaction" }));
+    expect(createTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 1350, direction: "IN", categoryId: 3 }),
+    );
+  });
+
+  it("keeps money in that was picked by hand, as for a refund", async () => {
+    vi.mocked(createTransaction).mockResolvedValue({ ...october[1], direction: "IN" });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Lunch");
+
+    const category = await openTheForm(user);
+    await user.click(screen.getByRole("radio", { name: "Money in" }));
+    await user.type(screen.getByLabelText("Amount (£)"), "12.50");
+    await user.selectOptions(category, "Food");
+    await user.click(screen.getByRole("button", { name: "Save transaction" }));
+
+    expect(createTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ direction: "IN", categoryId: 1 }),
+    );
   });
 
   it("checks the amount before saving", async () => {
@@ -138,6 +201,7 @@ describe("TransactionsPage", () => {
 
     expect(updateTransaction).toHaveBeenCalledWith(10, {
       amount: 13,
+      direction: "OUT",
       categoryId: 1,
       occurredOn: "2026-10-03",
       note: "Lunch",

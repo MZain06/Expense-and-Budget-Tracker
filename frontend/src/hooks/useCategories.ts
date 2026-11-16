@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createCategory, deleteCategory, fetchCategories, renameCategory } from "../api/categories";
+import { createCategory, deleteCategory, fetchCategories, updateCategory } from "../api/categories";
+import type { CategoryKind } from "../types/api";
 
 export function useCategories() {
   return useQuery({
@@ -8,6 +9,8 @@ export function useCategories() {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+type CategoryValues = { name: string; kind: CategoryKind };
 
 // Category names show up on every screen, so any change to a category refreshes everything.
 function useRefreshAll() {
@@ -18,15 +21,16 @@ function useRefreshAll() {
 export function useCreateCategory() {
   const refreshAll = useRefreshAll();
   return useMutation({
-    mutationFn: (name: string) => createCategory(name),
+    mutationFn: ({ name, kind }: CategoryValues) => createCategory(name, kind),
     onSuccess: refreshAll,
   });
 }
 
-export function useRenameCategory() {
+export function useUpdateCategory() {
   const refreshAll = useRefreshAll();
   return useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => renameCategory(id, name),
+    mutationFn: ({ id, name, kind }: CategoryValues & { id: number }) =>
+      updateCategory(id, name, kind),
     onSuccess: refreshAll,
   });
 }

@@ -4,17 +4,20 @@ import { BiggestChanges } from "../components/BiggestChanges";
 import { BudgetMeters } from "../components/BudgetMeters";
 import { Button } from "../components/Button";
 import { CategoryBars } from "../components/CategoryBars";
+import { IncomePanel } from "../components/IncomePanel";
 import { MonthSwitcher } from "../components/MonthSwitcher";
 import { SpendingHeadline } from "../components/SpendingHeadline";
 import { StatTile } from "../components/StatTile";
 import { TrendChart } from "../components/TrendChart";
 import { useInsights, useSummary } from "../hooks/useOverview";
+import { useShowIncome } from "../hooks/useShowIncome";
 import { formatMonthName, shiftMonth, toMonth } from "../lib/dates";
 import { formatMoney, sumAmounts } from "../lib/money";
 import type { Insights, MonthlySummary } from "../types/api";
 
 export function OverviewPage() {
   const [month, setMonth] = useState(() => toMonth(new Date()));
+  const [showIncome, setShowIncome] = useShowIncome();
   const summary = useSummary(month);
   const insights = useInsights(month);
 
@@ -37,7 +40,13 @@ export function OverviewPage() {
           </Button>
         </div>
       ) : (
-        <Overview month={month} summary={summary.data} insights={insights.data} />
+        <Overview
+          month={month}
+          summary={summary.data}
+          insights={insights.data}
+          showIncome={showIncome}
+          onShowIncome={setShowIncome}
+        />
       )}
     </div>
   );
@@ -47,9 +56,11 @@ type OverviewProps = {
   month: string;
   summary: MonthlySummary;
   insights: Insights;
+  showIncome: boolean;
+  onShowIncome: (show: boolean) => void;
 };
 
-function Overview({ month, summary, insights }: OverviewProps) {
+function Overview({ month, summary, insights, showIncome, onShowIncome }: OverviewProps) {
   const monthName = formatMonthName(month);
   const lastMonthName = formatMonthName(shiftMonth(month, -1));
   const inProgress = insights.projectedTotal !== null;
@@ -59,6 +70,21 @@ function Overview({ month, summary, insights }: OverviewProps) {
   return (
     <>
       <SpendingHeadline month={month} insights={insights} />
+
+      {showIncome ? (
+        <IncomePanel
+          summary={summary}
+          monthName={monthName}
+          inProgress={inProgress}
+          onHide={() => onShowIncome(false)}
+        />
+      ) : (
+        <div className="-mt-3 flex justify-end">
+          <Button variant="quiet" onClick={() => onShowIncome(true)}>
+            Show money in
+          </Button>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatTile
