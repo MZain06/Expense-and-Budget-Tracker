@@ -3,7 +3,7 @@
 [![CI](https://github.com/MZain06/Expense-and-Budget-Tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/MZain06/Expense-and-Budget-Tracker/actions/workflows/ci.yml)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)
 
-Track your spending against a monthly budget for each category, and see where the month is heading. The backend is Java 21 and Spring Boot 4 on PostgreSQL, the frontend is React 19 and TypeScript, and the whole app runs with one Docker Compose command.
+Track what you spend and what comes in, set a monthly budget for each category, and see where the month is heading. The backend is Java 21 and Spring Boot 4 on PostgreSQL, the frontend is React 19 and TypeScript, and the whole app runs with one Docker Compose command.
 
 <p align="center">
   <img src="docs/screenshots/overview.png" alt="The overview page: spending so far, budgets and the last 12 months" width="600">
@@ -11,10 +11,10 @@ Track your spending against a monthly budget for each category, and see where th
 
 ## Features
 
-- **Overview:** spending so far compared with the same point last month, a month-end projection, spending by category, a meter for each budget, a 12-month trend and the biggest changes since last month.
-- **Transactions:** add, edit and delete them, filtered by month and category.
-- **Budgets:** a monthly limit for any category, and last month's limits copied in one click.
-- **Categories:** seven to start with. Add, rename or delete them; a category that's in use can't be deleted.
+- **Overview:** spending so far compared with the same point last month, a month-end projection, spending by category, a meter for each budget, a 12-month trend and the biggest changes since last month. Money in, and what's left after spending, can be shown or hidden.
+- **Transactions:** add, edit and delete them as money out or money in, filtered by month and category.
+- **Budgets:** a monthly limit for any spending category. Set them by hand, copy last month's, or start from suggestions based on the last three months.
+- **Categories:** seven for spending and two for income to start with. Add, rename or delete them, or switch one between spending and income; a category that's in use can't be deleted.
 - **Accounts:** sign up and sign in. Each user only ever sees their own data.
 
 <p>
@@ -55,6 +55,8 @@ flowchart LR
 - **Stateless auth.** Signing in returns a JWT (HS256, valid for an hour). Passwords are hashed with BCrypt, and the signing secret comes from the environment.
 - **Data isolation.** Every query is scoped to the signed-in user. Asking for someone else's transaction returns 404, so IDs can't be probed.
 - **Exact money.** Amounts are `NUMERIC(12, 2)` in Postgres and `BigDecimal` in Java, and the frontend adds them up in whole pence.
+- **Money in and out.** Each category is for spending or income, and each transaction is money out or money in. A refund is money in on a spending category, so it comes off that category's spending, while pay and other income are added up separately and never count as spending.
+- **Suggested budgets.** A category's suggestion is its average spending over the last three months, rounded up to the next £5. Only months that have spending count, so a new account isn't averaged down by empty months.
 - **Fair comparisons.** Partway through a month, "last month" means the same days of last month, so a half month is never compared with a whole one.
 - **Migrations.** Flyway owns the schema, and Hibernate only checks that the entities match it.
 - **Locked-down containers.** Non-root users, read-only filesystems, no Linux capabilities, ports bound to localhost, and a strict Content-Security-Policy from nginx.

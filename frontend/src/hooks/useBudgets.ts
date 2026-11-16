@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   copyBudgetsFromPreviousMonth,
+  fetchBudgetSuggestions,
   fetchBudgets,
   removeBudget,
   setBudget,
@@ -10,6 +11,15 @@ export function useBudgets(month: string) {
   return useQuery({
     queryKey: ["budgets", month],
     queryFn: () => fetchBudgets(month),
+  });
+}
+
+/** Suggestions are only fetched once someone asks for them. */
+export function useBudgetSuggestions(month: string, wanted: boolean) {
+  return useQuery({
+    queryKey: ["budget-suggestions", month],
+    queryFn: () => fetchBudgetSuggestions(month),
+    enabled: wanted,
   });
 }
 

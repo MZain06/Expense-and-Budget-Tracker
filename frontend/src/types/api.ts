@@ -45,6 +45,18 @@ export type Budget = {
   limit: number;
 };
 
+export type SuggestedBudget = Budget & {
+  usualSpending: number;
+};
+
+export type BudgetSuggestions = {
+  basedOn: string[];
+  usualSpending: number;
+  usualIncome: number;
+  total: number;
+  budgets: SuggestedBudget[];
+};
+
 export type CategorySummary = {
   categoryId: number;
   categoryName: string;

@@ -1,4 +1,4 @@
-import type { Budget } from "../types/api";
+import type { Budget, BudgetSuggestions } from "../types/api";
 import { apiFetch } from "./client";
 
 export function fetchBudgets(month: string): Promise<Budget[]> {
@@ -18,4 +18,8 @@ export function removeBudget(month: string, categoryId: number): Promise<void> {
 
 export function copyBudgetsFromPreviousMonth(month: string): Promise<Budget[]> {
   return apiFetch<Budget[]>(`/budgets/${month}/copy-from-previous`, { method: "POST" });
+}
+
+export function fetchBudgetSuggestions(month: string): Promise<BudgetSuggestions> {
+  return apiFetch<BudgetSuggestions>(`/budgets/${month}/suggestions`);
 }

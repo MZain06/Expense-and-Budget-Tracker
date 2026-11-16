@@ -21,9 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class BudgetController {
 
     private final BudgetService budgetService;
+    private final BudgetSuggestionService suggestionService;
 
-    public BudgetController(BudgetService budgetService) {
+    public BudgetController(
+            BudgetService budgetService, BudgetSuggestionService suggestionService) {
         this.budgetService = budgetService;
+        this.suggestionService = suggestionService;
     }
 
     @GetMapping
@@ -55,5 +58,11 @@ public class BudgetController {
     public List<BudgetResponse> copyFromPreviousMonth(
             @CurrentUserId Long userId, @PathVariable("month") YearMonth month) {
         return budgetService.copyFromPreviousMonth(userId, month);
+    }
+
+    @GetMapping("/{month}/suggestions")
+    public BudgetSuggestions suggestions(
+            @CurrentUserId Long userId, @PathVariable("month") YearMonth month) {
+        return suggestionService.suggest(userId, month);
     }
 }
