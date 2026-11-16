@@ -2,6 +2,8 @@ package com.zain.expenses.budget;
 
 import static com.zain.expenses.TestAuth.bearerTokenFor;
 import static com.zain.expenses.TestAuth.categoryId;
+import static com.zain.expenses.TestData.addMoneyIn;
+import static com.zain.expenses.TestData.addTransaction;
 import static com.zain.expenses.TestData.setBudget;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -168,6 +170,26 @@ class BudgetControllerTests {
                         delete("/api/budgets/{month}/{categoryId}", "2026-10", food)
                                 .header(AUTHORIZATION, alex))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void suggestsBudgetsFromTheThreeMonthsBefore() throws Exception {
+        addTransaction(mockMvc, zain, food, "300.00", "2026-08-10");
+        addTransaction(mockMvc, zain, food, "330.00", "2026-09-10");
+        addTransaction(mockMvc, zain, food, "312.00", "2026-10-10");
+        addTransaction(mockMvc, zain, transport, "99.00", "2026-07-10");
+        addMoneyIn(mockMvc, zain, categoryId(mockMvc, zain, "Salary"), "1350.00", "2026-10-01");
+
+        mockMvc.perform(
+                        get("/api/budgets/{month}/suggestions", "2026-11")
+                                .header(AUTHORIZATION, zain))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.basedOn.length()").value(3))
+                .andExpect(jsonPath("$.budgets.length()").value(1))
+                .andExpect(jsonPath("$.budgets[0].categoryName").value("Food"))
+                .andExpect(jsonPath("$.budgets[0].usualSpending").value(314.0))
+                .andExpect(jsonPath("$.budgets[0].limit").value(315.0))
+                .andExpect(jsonPath("$.usualIncome").value(450.0));
     }
 
     @Test
