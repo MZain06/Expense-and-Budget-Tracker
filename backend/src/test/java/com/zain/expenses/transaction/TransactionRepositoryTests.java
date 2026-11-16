@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.zain.expenses.TestcontainersConfiguration;
 import com.zain.expenses.category.Category;
+import com.zain.expenses.category.CategoryKind;
 import com.zain.expenses.category.CategoryRepository;
 import com.zain.expenses.user.User;
 import com.zain.expenses.user.UserRepository;
@@ -62,6 +63,40 @@ class TransactionRepositoryTests {
 
         assertThat(transactions.findByIdAndUserId(lunch.getId(), bob.getId())).isEmpty();
         assertThat(transactions.findByIdAndUserId(lunch.getId(), alice.getId())).isPresent();
+    }
+
+    @Test
+    void totalsTakeRefundsOffSpendingAndKeepIncomeSeparate() {
+        User user = users.save(new User("dave@example.com", "hash"));
+        Category shopping = categories.save(new Category(user, "Shopping"));
+        Category salary = categories.save(new Category(user, "Salary", CategoryKind.INCOME));
+        LocalDate bought = LocalDate.of(2026, 10, 3);
+        LocalDate refunded = LocalDate.of(2026, 10, 7);
+        transactions.save(
+                new Transaction(
+                        user, shopping, Direction.OUT, new BigDecimal("50.00"), bought, "Jacket"));
+        transactions.save(
+                new Transaction(
+                        user, shopping, Direction.IN, new BigDecimal("20.00"), refunded, "Refund"));
+        transactions.save(
+                new Transaction(
+                        user, salary, Direction.IN, new BigDecimal("1350.00"), bought, "Pay"));
+        LocalDate first = LocalDate.of(2026, 10, 1);
+        LocalDate last = LocalDate.of(2026, 10, 31);
+
+        List<CategorySpending> spending =
+                transactions.spendingByCategory(user.getId(), first, last);
+        assertThat(spending).extracting(CategorySpending::categoryName).containsExactly("Shopping");
+        assertThat(spending.get(0).spent()).isEqualByComparingTo("30.00");
+
+        List<CategoryIncome> income = transactions.incomeByCategory(user.getId(), first, last);
+        assertThat(income).extracting(CategoryIncome::categoryName).containsExactly("Salary");
+        assertThat(income.get(0).received()).isEqualByComparingTo("1350.00");
+
+        List<DailySpending> days = transactions.spendingByDay(user.getId(), first, last);
+        assertThat(days).extracting(DailySpending::day).containsExactly(bought, refunded);
+        assertThat(days.get(0).spent()).isEqualByComparingTo("50.00");
+        assertThat(days.get(1).spent()).isEqualByComparingTo("-20.00");
     }
 
     @Test
